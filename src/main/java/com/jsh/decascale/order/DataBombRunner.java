@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 public class DataBombRunner implements CommandLineRunner {
 
@@ -22,7 +22,7 @@ public class DataBombRunner implements CommandLineRunner {
         // 이미 데이터가 있는지 확인해서 중복 삽입 방지
         Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Long.class);
         if (count != null && count > 0) {
-            System.out.println("✅ 이미 데이터가 존재합니다. 폭격 코드를 건너뜁니다.");
+            System.out.println("이미 데이터가 존재합니다. 폭격 코드를 건너뜁니다.");
             return;
         }
 
