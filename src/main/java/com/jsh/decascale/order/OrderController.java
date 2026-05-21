@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class OrderController {
@@ -18,5 +20,13 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return orderService.getOrdersNaive(page, size);
+    }
+    
+    // 개선된 페이징 API
+    @GetMapping("/api/v2/orders")
+    public List<Order> getOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return orderService.getOrdersByIdMath(page, size);
     }
 }
