@@ -10,7 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_orders_request_id", columnNames = {"request_id"})
+})
 @Getter
 @Builder
 @AllArgsConstructor
@@ -23,6 +25,10 @@ public class Order {
 
     private Long userId;
     private Long productId;
+
+    @Column(name = "request_id")
+    private String requestId;
+
     private String orderStatus;
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;

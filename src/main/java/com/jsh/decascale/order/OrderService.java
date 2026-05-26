@@ -52,7 +52,7 @@ public class OrderService {
     }
 
     @Transactional
-    public void createOrder(Long userId, Long productId) {
+    public void createOrder(Long userId, Long productId, String requestId) {
         // 1. 상품 조회 (락 없음)
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("상품 없음"));
@@ -64,6 +64,7 @@ public class OrderService {
         Order order = Order.builder()
                 .userId(userId)
                 .productId(productId)
+                .requestId(requestId)
                 .orderStatus("PAYMENT_WAIT")
                 .totalAmount(product.getPrice())
                 .createdAt(LocalDateTime.now())

@@ -35,7 +35,7 @@ public class OrderController {
 
     @PostMapping("/api/orders")
     public String createOrder(@org.springframework.web.bind.annotation.RequestBody OrderRequestDto request) {
-        orderService.createOrder(request.getUserId(), request.getProductId());
+        orderService.createOrder(request.getUserId(), request.getProductId(), request.getRequestId());
         return "SUCCESS";
     }
 }

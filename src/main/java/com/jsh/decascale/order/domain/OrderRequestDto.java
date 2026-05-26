@@ -6,4 +6,5 @@ import lombok.Getter;
 public class OrderRequestDto {
     private Long userId;
     private Long productId;
+    private String requestId;
 }

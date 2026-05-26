@@ -11,12 +11,21 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class Product {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
     private int stock;
     private BigDecimal price;
+
+    @Version
+    private Long version;
+
+    public Product(Long id, String name, int stock, BigDecimal price) {
+        this.id = id;
+        this.name = name;
+        this.stock = stock;
+        this.price = price;
+    }
 
     // 락이 없는 아주 순진한 재고 차감 메서드
     public void decreaseStock(int quantity) {

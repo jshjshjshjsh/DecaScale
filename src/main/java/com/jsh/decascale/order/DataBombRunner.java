@@ -1,5 +1,7 @@
 package com.jsh.decascale.order;
 
+import com.jsh.decascale.product.ProductRepository;
+import com.jsh.decascale.product.domain.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,14 +13,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-//@Component
+@Component
 @RequiredArgsConstructor
 public class DataBombRunner implements CommandLineRunner {
 
+    private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(String... args) throws Exception {
+        // decaInsert();
+        concurrencyInsert();
+    }
+
+    private void concurrencyInsert(){
+        if (productRepository.count() == 0) {
+            System.out.println("K6 동시성 폭격용 타겟(상품) 생성 시작...");
+
+            // 1. 오픈런 타겟: 777번 (낙관적 락 테스트용, 재고 10개)
+            productRepository.save(new Product(777L, "오픈런특가 네스프레소 머신", 10, BigDecimal.valueOf(150000)));
+
+            // 2. 따닥 방어 타겟: 888번 (유니크 인덱스 테스트용, 재고 100개)
+            productRepository.save(new Product(888L, "아르페지오 캡슐 1슬리브", 100, BigDecimal.valueOf(8000)));
+
+            System.out.println("폭격 타겟 세팅 완료! K6 발사 준비 끝!");
+        }
+    }
+
+    private void decaInsert(){
         // 이미 데이터가 있는지 확인해서 중복 삽입 방지
         Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Long.class);
         if (count != null && count > 0) {
