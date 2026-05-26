@@ -1,18 +1,25 @@
 package com.jsh.decascale.order;
 
+import com.jsh.decascale.order.domain.Order;
+import com.jsh.decascale.product.domain.Product;
+import com.jsh.decascale.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
 
     public Page<Order> getOrdersNaive(int page, int size) {
         // created_at 기준으로 최신순 정렬해서 가져오기
@@ -42,5 +49,27 @@ public class OrderService {
         PageRequest pageable = PageRequest.of(0, size);
 
         return orderRepository.findOrdersByIdMath(targetId, pageable);
+    }
+
+    @Transactional
+    public void createOrder(Long userId, Long productId) {
+        // 1. 상품 조회 (락 없음)
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("상품 없음"));
+
+        // 2. 재고 차감 (여기서 100명이 동시에 10개짜리 재고를 통과함)
+        product.decreaseStock(1);
+
+        // 3. 주문 생성 (여기서 한 유저가 따닥 버튼 누른 게 그대로 다 들어감)
+        Order order = Order.builder()
+                .userId(userId)
+                .productId(productId)
+                .orderStatus("PAYMENT_WAIT")
+                .totalAmount(product.getPrice())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
     }
 }
