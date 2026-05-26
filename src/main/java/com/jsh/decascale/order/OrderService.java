@@ -4,6 +4,7 @@ import com.jsh.decascale.order.domain.Order;
 import com.jsh.decascale.product.domain.Product;
 import com.jsh.decascale.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -69,6 +71,47 @@ public class OrderService {
                 .totalAmount(product.getPrice())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void createOrderWithRetry(Long userId, Long productId, String requestId) {
+        int retryCount = 0;
+
+        while (true) {
+            try {
+                retryCount++;
+                executeOrderLogic(userId, productId, requestId);
+
+                log.info("[성공] 유저 {}가 {}번 재시도 끝에 주문 성공!", userId, retryCount);
+                break;
+
+            } catch (Exception e) {
+                // 유니크 인덱스든 낙관적 락이든 상관없이 모든 에러가 터지면
+                // 포기 안 하고 0.05초 쉬었다가 좀비처럼 계속 다시 들이받음!
+                log.warn("[충돌 발생] 유저 {} -> {}번째 재시도 중... 에러: {}", userId, retryCount, e.getClass().getSimpleName());
+                try { Thread.sleep(50); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+            }
+        }
+    }
+
+    // 💡 실제 로직은 별도 메서드로 분리 (트래픽 경합을 위해 락 없이 조회+수정)
+    public void executeOrderLogic(Long userId, Long productId, String requestId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("상품 없음"));
+
+        product.decreaseStock(1);
+
+        Order order = Order.builder()
+                .userId(userId)
+                .productId(productId)
+                .requestId(requestId)
+                .orderStatus("PAYMENT_WAIT")
+                .totalAmount(product.getPrice())
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build();
 
         orderRepository.save(order);

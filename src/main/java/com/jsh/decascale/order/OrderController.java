@@ -5,10 +5,7 @@ import com.jsh.decascale.order.domain.OrderRequestDto;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,8 +31,14 @@ public class OrderController {
     }
 
     @PostMapping("/api/orders")
-    public String createOrder(@org.springframework.web.bind.annotation.RequestBody OrderRequestDto request) {
+    public String createOrder(@RequestBody OrderRequestDto request) {
         orderService.createOrder(request.getUserId(), request.getProductId(), request.getRequestId());
+        return "SUCCESS";
+    }
+
+    @PostMapping("/api/retry/orders")
+    public String createOrder2(@RequestBody OrderRequestDto request) {
+        orderService.createOrderWithRetry(request.getUserId(), request.getProductId(), request.getRequestId());
         return "SUCCESS";
     }
 }
