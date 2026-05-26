@@ -1,5 +1,6 @@
 package com.jsh.decascale.order;
 
+import com.jsh.decascale.exception.OutOfStockException;
 import com.jsh.decascale.order.domain.Order;
 import com.jsh.decascale.product.domain.Product;
 import com.jsh.decascale.product.ProductRepository;
@@ -8,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final StringRedisTemplate redisTemplate;
+    private final DefaultRedisScript<Long> stockScript;
 
     public Page<Order> getOrdersNaive(int page, int size) {
         // created_at 기준으로 최신순 정렬해서 가져오기
@@ -115,5 +120,37 @@ public class OrderService {
                 .build();
 
         orderRepository.save(order);
+    }
+
+    @Transactional
+    public void createOrderWithRedis(Long userId, Long productId, String requestId) {
+        // 💡 1단계: DB 가기 전에 Redis 메모리에서 먼저 입구컷 시도! (단 0.001초 컷)
+        String stockKey = "product:stock:" + productId;
+        Long result = redisTemplate.execute(stockScript, Collections.singletonList(stockKey));
+
+        if (result == null || result == 0L) {
+            log.warn("[Redis 입구컷] 유저 {} 튕김! (재고 소진)", userId);
+            throw new OutOfStockException("재고가 모두 소진되었습니다.");
+        }
+
+        // 💡 2단계: Redis를 통과한 '선택받은 자(10명)'만 DB에 접근해서 주문서 작성
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("상품 없음"));
+
+        // 낙관적 락으로 최후의 DB 정합성(Layer 4) 방어
+        product.decreaseStock(1);
+
+        Order order = Order.builder()
+                .userId(userId)
+                .productId(productId)
+                .requestId(requestId)
+                .orderStatus("PAYMENT_WAIT")
+                .totalAmount(product.getPrice())
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+        log.info("[주문 완료] 유저 {} 성공적으로 결제 안착!", userId);
     }
 }

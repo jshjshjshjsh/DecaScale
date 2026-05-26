@@ -4,6 +4,7 @@ import com.jsh.decascale.product.ProductRepository;
 import com.jsh.decascale.product.domain.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -19,11 +20,27 @@ public class DataBombRunner implements CommandLineRunner {
 
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public void run(String... args) throws Exception {
         // decaInsert();
-        concurrencyInsert();
+        //concurrencyInsert();
+        RedisInsert();
+    }
+
+    private void RedisInsert(){
+        if (productRepository.count() == 0) {
+            System.out.println("K6 동시성 폭격용 타겟 세팅 (DB + Redis)...");
+
+            productRepository.save(new Product(777L, "오픈런특가 네스프레소 머신", 10, BigDecimal.valueOf(150000)));
+            productRepository.save(new Product(888L, "아르페지오 캡슐 1슬리브", 100, BigDecimal.valueOf(8000)));
+
+            redisTemplate.opsForValue().set("product:stock:777", "10");
+            redisTemplate.opsForValue().set("product:stock:888", "100");
+
+            System.out.println("Redis 메모리 방어막 장전 완료! 발사 준비 끝!");
+        }
     }
 
     private void concurrencyInsert(){

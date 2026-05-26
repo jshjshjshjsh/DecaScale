@@ -41,4 +41,10 @@ public class OrderController {
         orderService.createOrderWithRetry(request.getUserId(), request.getProductId(), request.getRequestId());
         return "SUCCESS";
     }
+
+    @PostMapping("/api/redis/orders")
+    public String createOrderRedis(@RequestBody OrderRequestDto request) {
+        orderService.createOrderWithRedis(request.getUserId(), request.getProductId(), request.getRequestId());
+        return "SUCCESS";
+    }
 }
