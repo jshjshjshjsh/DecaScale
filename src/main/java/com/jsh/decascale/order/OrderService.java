@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -152,5 +153,9 @@ public class OrderService {
 
         orderRepository.save(order);
         log.info("[주문 완료] 유저 {} 성공적으로 결제 안착!", userId);
+    }
+
+    public List<Order> getOrdersByUserId(Long userId, Pageable pageable) {
+        return orderRepository.findByUserIdOrderByIdDesc(userId, pageable);
     }
 }

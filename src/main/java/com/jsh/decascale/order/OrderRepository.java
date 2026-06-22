@@ -17,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     @Query("SELECT o FROM Order o WHERE o.id <= :targetId ORDER BY o.id DESC")
     List<Order> findOrdersByIdMath(@Param("targetId") Long targetId, Pageable pageable);
+
+    List<Order> findByUserIdOrderByIdDesc(Long userId, Pageable pageable);
 }

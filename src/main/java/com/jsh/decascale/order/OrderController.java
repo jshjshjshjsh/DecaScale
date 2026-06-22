@@ -5,6 +5,8 @@ import com.jsh.decascale.order.domain.OrderRequestDto;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,5 +48,15 @@ public class OrderController {
     public String createOrderRedis(@RequestBody OrderRequestDto request) {
         orderService.createOrderWithRedis(request.getUserId(), request.getProductId(), request.getRequestId());
         return "SUCCESS";
+    }
+
+    @GetMapping("/api/v1/orders/user/{userId}")
+    public ResponseEntity<?> getOrdersByUserId(@PathVariable Long userId) {
+        // 최근 주문 10개만 가져오기
+        List<Order> orders = orderService.getOrdersByUserId(
+                userId,
+                PageRequest.of(0, 10)
+        );
+        return ResponseEntity.ok(orders);
     }
 }

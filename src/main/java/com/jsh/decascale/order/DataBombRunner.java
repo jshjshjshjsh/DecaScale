@@ -24,9 +24,9 @@ public class DataBombRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // decaInsert();
-        //concurrencyInsert();
-        RedisInsert();
+         decaInsert();
+        // concurrencyInsert();
+        // RedisInsert();
     }
 
     private void RedisInsert(){
